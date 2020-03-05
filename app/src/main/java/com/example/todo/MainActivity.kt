@@ -1,9 +1,13 @@
 package com.example.todo
 
-import android.app.DatePickerDialog
+import android.app.*
 import android.app.DatePickerDialog.OnDateSetListener
-import android.app.Dialog
 import android.content.Context
+import android.content.Intent
+import android.content.res.Configuration
+import android.content.res.Resources
+import android.media.RingtoneManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -14,12 +18,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.coroutines.GlobalScope
@@ -40,7 +46,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var firebaseDatabase: FirebaseDatabase
     lateinit var firebaseDatabaseReference: DatabaseReference
 
-
+    val PICK_IMAGE=300
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,10 +62,50 @@ class MainActivity : AppCompatActivity() {
         lytNoTodos = findViewById(R.id.lytNoTodos)
         todoadapter = Todoadapter(context,myTodos)
         showmyTodos()
+        fetchMyTodoFromFirebase()
 
+        this.title= getString(R.string.app_name)
+
+        saveToFirebase.visibility = View.VISIBLE
         saveToFirebase.setOnClickListener {
-            firebaseDatabaseReference.setValue("hello")
-        }
+
+            val pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+                PendingIntent.FLAG_ONE_SHOT)
+            val channelId = "my_channel"
+            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val notificationBuilder = NotificationCompat.Builder(this, channelId)
+                .setContentTitle(title)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentText("Test Notification")
+                .setAutoCancel(false)
+                .setSound(defaultSoundUri)
+                .setContentIntent(pendingIntent)
+
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Since android Oreo notification channel is needed.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(channelId,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT)
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            notificationManager.notify(0 /* ID of notification */, notificationBuilder.build())
+            }
+
+
+
+
+button.setOnClickListener {
+    val intent =  Intent();
+    intent.setType("image/*");
+    intent.setAction(Intent.ACTION_GET_CONTENT);
+    startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+
+
+
+}
 
 
 
@@ -69,7 +115,6 @@ class MainActivity : AppCompatActivity() {
             /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
             */
-
 
 
 
@@ -86,10 +131,11 @@ class MainActivity : AppCompatActivity() {
                 val sdf = SimpleDateFormat("E dd MMM yyyy hh:mm a")
                 val currentdate = sdf.format(Date())
                 //myTodos.add(Todo(txttitle.text.toString(),txtdescription.text.toString(), currentdate))
-                val mydb=Mytododb(context)
-                GlobalScope.launch {
-                    mydb.todosDao().saveMyTodo(Todo(0,txttitle.text.toString(),txtdescription.text.toString(), currentdate))
-                }
+                val todo = Todo(0,txttitle.text.toString(),txtdescription.text.toString(), currentdate)
+               /* GlobalScope.launch {
+                    mydb.todosDao().saveMyTodo(todo)
+                }*/
+                firebaseDatabaseReference.push().setValue(todo)
 
                 dialog.dismiss()
                 showmyTodos()
@@ -118,43 +164,74 @@ class MainActivity : AppCompatActivity() {
 
 
     }
+    fun fetchMyTodoFromFirebase(){
+        firebaseDatabaseReference.addChildEventListener(object : ChildEventListener {
+            override fun onCancelled(p0: DatabaseError) {
+            }
+            override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+            }
+            override fun onChildChanged(p0: DataSnapshot, p1: String?) {
+            }
+            override fun onChildAdded(dataSnapshot: DataSnapshot, p1: String?) {
+                if(dataSnapshot.exists()){
+                    val todo: Todo = dataSnapshot.getValue(Todo::class.java)!!
+
+                    val mydb=Mytododb(context)
+                    GlobalScope.launch {
+                        mydb.todosDao().saveMyTodo(todo)
+                    }
+                    //myTodos.add(todo)
+                    //showOnRecyclerView(myTodos)
+                }else{
+                }
+
+            }
+
+            override fun onChildRemoved(p0: DataSnapshot) {
+            }
+        })
+    }
     fun showmyTodos(){
         Mytododb(context)
             .todosDao()
-            .getMyTodos().observe(this, androidx.lifecycle.Observer {mytodoItem->
-                myTodos= mytodoItem as ArrayList<Todo>
-                todoadapter = Todoadapter(this@MainActivity, myTodos)
-                recyclerView.adapter = todoadapter
-
-                val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT){
-                    override fun onMove(
-                        recyclerView: RecyclerView,
-                        viewHolder: RecyclerView.ViewHolder,
-                        target: RecyclerView.ViewHolder
-                    ): Boolean {
-                        return false
-                    }
-
-                    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                        todoadapter.removeItem(viewHolder)
-                        // todoadapter.notifyDataSetChanged()
-                        Toast.makeText(context,"Removing ...",Toast.LENGTH_LONG).show()
-                    }
-
-
-                }
-
-                val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
-                itemTouchHelper.attachToRecyclerView(recyclerView)
-
-                if (myTodos.isEmpty()){
-                    lytNoTodos.visibility=View.VISIBLE
-                }else{
-                    lytNoTodos.visibility=View.GONE
-
-                }
-
+            .getMyTodos().observe(this, androidx.lifecycle.Observer { mytodoItem ->
+                myTodos = mytodoItem as ArrayList<Todo>
+                showOnRecyclerView(myTodos)
             })
+    }
+
+    fun showOnRecyclerView(todosList:List<Todo>){
+        todoadapter = Todoadapter(this@MainActivity, todosList)
+        recyclerView.adapter = todoadapter
+
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT){
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                todoadapter.removeItem(viewHolder)
+                // todoadapter.notifyDataSetChanged()
+                Toast.makeText(context,"Removing ...",Toast.LENGTH_LONG).show()
+            }
+
+
+        }
+
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(recyclerView)
+
+        if (myTodos.isEmpty()){
+            lytNoTodos.visibility=View.VISIBLE
+        }else{
+            lytNoTodos.visibility=View.GONE
+
+        }
+
     }
 
 
@@ -164,6 +241,9 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    fun showToast(message:String){
+        Toast.makeText(context,message,Toast.LENGTH_SHORT).show()
+    }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -173,9 +253,58 @@ class MainActivity : AppCompatActivity() {
                 FirebaseAuth.getInstance().signOut()
             return true
             }
+            R.id.action_change_language->{
+                //change language
+                changeLanguage("sw")
+                return true;
+            }
             else -> super.onOptionsItemSelected(item)
         }
 
 
     }
+
+    fun changeLanguage(language:String){
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val res: Resources = this.getResources()
+        val config =
+            Configuration(res.getConfiguration())
+        config.locale = locale
+        res.updateConfiguration(config, res.getDisplayMetrics())
+        val refresh = Intent(this@MainActivity,MainActivity::class.java)
+        finish()
+        startActivity(refresh)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, imagedata: Intent?) {
+        super.onActivityResult(requestCode, resultCode, imagedata)
+        if(requestCode==PICK_IMAGE){
+            showToast("Result Returned "+imagedata.toString())
+            //imageView3.setImageURI(data!!.data)
+            //save to firebase
+            val storage = FirebaseStorage.getInstance().reference.child("images")
+            //storage.putFile(imagedata!!.data!!)
+            val uploadTask =storage.putFile(imagedata!!.data!!)
+            val urlTask = uploadTask.continueWithTask { task ->
+                if (!task.isSuccessful) {
+                    task.exception?.let {
+                        throw it
+                    }
+                }
+                storage.downloadUrl
+            }.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val downloadUri = task.result
+                    showToast("Saved Successfully ")
+                    Log.e("IMAGE URL",downloadUri.toString())
+                } else {
+                    // Handle failures
+                    // ...
+
+                }
+            }
+        }
+    }
+
 }

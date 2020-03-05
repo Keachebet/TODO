@@ -18,6 +18,7 @@ class Ktodos : AppCompatActivity() {
         firebaseAuthListener =FirebaseAuth.AuthStateListener(){user->
             val loginedUser = firebaseAuth.currentUser
             if (loginedUser!=null){
+                finish()
             startActivity(Intent(this@Ktodos,MainActivity::class.java))
                 Toast.makeText(this@Ktodos,"Welcome ${loginedUser.displayName}",Toast.LENGTH_LONG).show()
         }else{

@@ -15,7 +15,9 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" >
+
+    </androidx.recyclerview.widget.RecyclerView>
 
     <LinearLayout
         android:id="@+id/lytNoTodos"
@@ -26,6 +28,12 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="IMAGE" />
 
         <ImageView
             android:id="@+id/imageView2"
@@ -39,6 +47,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="You don't have  any Todos" />
+
     </LinearLayout>
 
     <Button
@@ -46,5 +55,13 @@
         android:text="SaveSave"
         android:id="@+id/saveToFirebase"
         android:layout_height="wrap_content"/>
+
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/saveToFirebase"
+        tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

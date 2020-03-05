@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">fanya</string>
+    <string name="action_settings">Mipangilio</string>
+    <string name="change_language">Badilisha Lugha</string>
+    <string name="signout">Toka</string>
+</resources>
