@@ -22,7 +22,6 @@ import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
@@ -47,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var firebaseDatabaseReference: DatabaseReference
 
     val PICK_IMAGE=300
+    var image_url=""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +67,6 @@ class MainActivity : AppCompatActivity() {
 
         this.title= getString(R.string.app_name)
 
-        saveToFirebase.visibility = View.VISIBLE
         saveToFirebase.setOnClickListener {
 
             val pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
@@ -124,25 +124,51 @@ button.setOnClickListener {
             val txttitle = dialog.findViewById<EditText>(R.id.editTitle)
             val txtdescription = dialog.findViewById<EditText>(R.id.editDescription)
             val btnsave = dialog.findViewById<Button>(R.id.btnSave)
-            val btndate = dialog.findViewById<Button>(R.id.btndate)
+            //val btndate = dialog.findViewById<Button>(R.id.btn_image)
+            val btn_image = dialog.findViewById<Button>(R.id.btn_image)
+            btn_image.setOnClickListener {
+                val intent =  Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+
+
+            }
 
             btnsave.setOnClickListener {
                 Log.e("Data","title ${txttitle.text} desc ${txtdescription.text}")
                 val sdf = SimpleDateFormat("E dd MMM yyyy hh:mm a")
                 val currentdate = sdf.format(Date())
-                //myTodos.add(Todo(txttitle.text.toString(),txtdescription.text.toString(), currentdate))
-                val todo = Todo(0,txttitle.text.toString(),txtdescription.text.toString(), currentdate)
-               /* GlobalScope.launch {
-                    mydb.todosDao().saveMyTodo(todo)
-                }*/
-                firebaseDatabaseReference.push().setValue(todo)
 
-                dialog.dismiss()
-                showmyTodos()
+                //first we will upload the image once the image is upload and we received the url.
+                //save to rest to firebase.
+                if(txttitle.text.toString().isEmpty()){
+                    txttitle.error="Empty set"
+                }
 
-            }
+                else {
+                    if (txtdescription.text.toString().isEmpty()) {
+                        txtdescription.error = "Provide description"
+                    }
+                    else {
+                        val todo = Todo(
+                            0, txttitle.text.toString(), txtdescription.text.toString(),
+                            currentdate, image_url
+                        )
+                        firebaseDatabaseReference.push().setValue(todo)
 
-            btndate.setOnClickListener {
+                        dialog.dismiss()
+                        showmyTodos()
+
+                    }
+                }
+
+                }
+
+
+
+
+           /* btndate.setOnClickListener {
                 val c = Calendar.getInstance();
                 var mYear = c.get(Calendar.YEAR);
                 var mMonth = c.get(Calendar.MONTH);
@@ -156,7 +182,7 @@ button.setOnClickListener {
                 )
 
                 datePickerDialog.show()
-            }
+            }*/
 
             dialog.show()
         }
@@ -280,7 +306,7 @@ button.setOnClickListener {
     override fun onActivityResult(requestCode: Int, resultCode: Int, imagedata: Intent?) {
         super.onActivityResult(requestCode, resultCode, imagedata)
         if(requestCode==PICK_IMAGE){
-            showToast("Result Returned "+imagedata.toString())
+           // showToast("Result Returned "+imagedata.toString())
             //imageView3.setImageURI(data!!.data)
             //save to firebase
             val storage = FirebaseStorage.getInstance().reference.child("images")
@@ -297,7 +323,9 @@ button.setOnClickListener {
                 if (task.isSuccessful) {
                     val downloadUri = task.result
                     showToast("Saved Successfully ")
-                    Log.e("IMAGE URL",downloadUri.toString())
+                    //Log.e("IMAGE URL",downloadUri.toString())
+                    image_url = downloadUri.toString()
+
                 } else {
                     // Handle failures
                     // ...

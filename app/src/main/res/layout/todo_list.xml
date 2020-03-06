@@ -39,6 +39,12 @@
             android:layout_height="wrap_content"
             android:text="TextView" />
 
+        <ImageView
+            android:id="@+id/imgshow"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            tools:srcCompat="@tools:sample/backgrounds/scenic" />
+
     </LinearLayout>
 
 

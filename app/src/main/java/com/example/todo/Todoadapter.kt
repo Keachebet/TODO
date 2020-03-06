@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.amulyakhare.textdrawable.TextDrawable
 import com.amulyakhare.textdrawable.util.ColorGenerator
+import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -33,8 +34,11 @@ class Todoadapter(var context:Context,
         holder.title.text=peopleName.get(position).title
         holder.description.text=peopleName.get(position).description
         holder.date.text=peopleName.get(position).date
+        var char1="N/A"
+        if(!peopleName.get(position).title.isEmpty()){
+            char1= peopleName.get(position).title.get(0).toUpperCase().toString()
 
-        val char1= peopleName.get(position).title.get(0).toUpperCase().toString()
+        }
 
         val colorGenerator = ColorGenerator.MATERIAL
         val color = colorGenerator.randomColor
@@ -42,6 +46,13 @@ class Todoadapter(var context:Context,
         val drawable2 = TextDrawable.builder()
             .buildRound(char1, color)
         holder.image.setImageDrawable(drawable2)
+
+
+        Glide
+            .with(context)
+            .load(peopleName.get(position).image_url)
+            .centerCrop()
+            .into(holder.imageshow);
 
        // holder.image.setImageResource(peopleName.get(position).image)
     }
@@ -58,6 +69,7 @@ class Todoadapter(var context:Context,
 
         }
 
+
         Snackbar.make(viewHolder.itemView, "$removedItem deleted.", Snackbar.LENGTH_LONG).setAction("UNDO") {
             peopleName.add(removedPosition, removedItem)
             notifyItemInserted(removedPosition)
@@ -69,6 +81,7 @@ class Todoadapter(var context:Context,
         val description = itemView.findViewById<TextView>(R.id.description)
         val date = itemView.findViewById<TextView>(R.id.date)
         val image = itemView.findViewById<ImageView>(R.id.imageView)
+        val imageshow = itemView.findViewById<ImageView>(R.id.imgshow)
 
 
     }
