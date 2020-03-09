@@ -152,7 +152,7 @@ button.setOnClickListener {
                     }
                     else {
                         val todo = Todo(
-                            0, txttitle.text.toString(), txtdescription.text.toString(),
+                            Date().time.toInt(), txttitle.text.toString(), txtdescription.text.toString(),
                             currentdate, image_url
                         )
                         firebaseDatabaseReference.push().setValue(todo)

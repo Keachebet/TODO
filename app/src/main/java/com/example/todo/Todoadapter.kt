@@ -1,7 +1,7 @@
 package com.example.todo
 
 import android.content.Context
-import android.graphics.Color
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 
 
 class Todoadapter(var context:Context,
-                          var peopleName:List<Todo>): RecyclerView.Adapter<Todoadapter.ViewHolder>() {
+                          var todoItem:List<Todo>): RecyclerView.Adapter<Todoadapter.ViewHolder>() {
     private var removedPosition: Int = 0
     private var removedItem: String = ""
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -27,16 +27,16 @@ class Todoadapter(var context:Context,
     }
 
     override fun getItemCount(): Int {
-        return peopleName.size
+        return todoItem.size
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.title.text=peopleName.get(position).title
-        holder.description.text=peopleName.get(position).description
-        holder.date.text=peopleName.get(position).date
+        holder.title.text=todoItem.get(position).title
+        holder.description.text=todoItem.get(position).description
+        holder.date.text=todoItem.get(position).date
         var char1="N/A"
-        if(!peopleName.get(position).title.isEmpty()){
-            char1= peopleName.get(position).title.get(0).toUpperCase().toString()
+        if(!todoItem.get(position).title.isEmpty()){
+            char1= todoItem.get(position).title.get(0).toUpperCase().toString()
 
         }
 
@@ -50,28 +50,36 @@ class Todoadapter(var context:Context,
 
         Glide
             .with(context)
-            .load(peopleName.get(position).image_url)
+            .load(todoItem.get(position).image_url)
             .centerCrop()
             .into(holder.imageshow);
+
+        holder.itemView.setOnClickListener {
+            val intent = Intent(context,ImagesPage::class.java)
+            //intent.putExtra("image", todoItem.get(position).image_url)
+            intent.putExtra("todo", todoItem.get(position))
+            context.startActivity(intent)
+           // Toast.makeText(this@MainActivity, Toast.LENGTH_SHORT).show()
+        }
 
        // holder.image.setImageResource(peopleName.get(position).image)
     }
 
     fun removeItem(viewHolder: RecyclerView.ViewHolder){
         removedPosition = viewHolder.adapterPosition
-        removedItem = peopleName[viewHolder.adapterPosition].toString()
-        peopleName.removeAt(viewHolder.adapterPosition)
+        removedItem = todoItem[viewHolder.adapterPosition].toString()
+        todoItem.removeAt(viewHolder.adapterPosition)
         notifyItemRemoved(viewHolder.adapterPosition)
 
         GlobalScope.launch {
             Mytododb.invoke(context).todosDao()
-                .deleteTodo(peopleName[viewHolder.adapterPosition+1])
+                .deleteTodo(todoItem[viewHolder.adapterPosition+1])
 
         }
 
 
         Snackbar.make(viewHolder.itemView, "$removedItem deleted.", Snackbar.LENGTH_LONG).setAction("UNDO") {
-            peopleName.add(removedPosition, removedItem)
+            todoItem.add(removedPosition, removedItem)
             notifyItemInserted(removedPosition)
         }.show()
     }
