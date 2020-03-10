@@ -22,8 +22,10 @@ import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
@@ -47,6 +49,7 @@ class MainActivity : AppCompatActivity() {
 
     val PICK_IMAGE=300
     var image_url=""
+    val TAG = "MyActivity"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -187,9 +190,10 @@ button.setOnClickListener {
             dialog.show()
         }
 
-
-
     }
+
+
+
     fun fetchMyTodoFromFirebase(){
         firebaseDatabaseReference.addChildEventListener(object : ChildEventListener {
             override fun onCancelled(p0: DatabaseError) {
@@ -334,5 +338,7 @@ button.setOnClickListener {
             }
         }
     }
+
+
 
 }
